@@ -285,10 +285,22 @@ function addPh(i, inp) {
   if (file.size > 5 * 1024 * 1024) { tk('照片過大，請選擇 5MB 以內的檔案', 'err'); inp.value=''; return; }
   if (!apiUrl) { tk('請先設定 API 網址', 'err'); return; }
 
+  // 抓場地名稱（先讀欄位，若空白就用提示框詢問）
+  var nameEl = document.getElementById('fn');
+  var vname = (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : '';
+  if (!vname) {
+    vname = window.prompt('請先輸入場地名稱，照片才能正確命名：');
+    if (!vname || !vname.trim()) { tk('請先填寫場地名稱', 'err'); inp.value=''; return; }
+    vname = vname.trim();
+    if (nameEl) nameEl.value = vname; // 填回欄位
+  }
+
   // 顯示上傳中
   var slot = document.getElementById('ps' + i);
   slot.classList.add('uploading');
   slot.innerHTML = '<div class="ps-spin"></div><div class="ps-lbl" style="pointer-events:none">上傳中…</div>';
+
+  var capturedName = vname; // 閉包固定名稱
 
   var reader = new FileReader();
   reader.onload = async function(e) {
@@ -300,7 +312,7 @@ function addPh(i, inp) {
           filename: file.name,
           base64: e.target.result,
           mimeType: file.type,
-          venueName: document.getElementById('fn').value.trim() || '未命名場地',
+          venueName: capturedName,
           photoIndex: i + 1
         }),
         redirect: 'follow'

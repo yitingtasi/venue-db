@@ -1,166 +1,473 @@
-// ══════════════════════════════════════════════════════════
-//  活動場地資料庫 - Google Apps Script 後端
-//  照片上傳到指定的 Google 雲端硬碟資料夾
-// ══════════════════════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>活動場地資料庫</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f4f8;--s:#fff;--s2:#f7f9fc;--br:#d0dce8;
+  --p:#1a5276;--pl:#2980b9;--pp:#d6eaf8;
+  --ac:#e67e22;--ap:#fdebd0;
+  --ok:#1e8449;--okp:#d5f5e3;
+  --dg:#c0392b;--dgp:#fadbd8;
+  --t1:#1c2833;--t2:#4a5568;--t3:#718096;
+  --sh:0 4px 16px rgba(26,82,118,.10);--shl:0 8px 32px rgba(26,82,118,.15);
+  --r:12px;--rl:20px;
+}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t1);font-size:18px;min-height:100vh}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes su{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.hdr{background:linear-gradient(135deg,#1a5276,#154360);color:#fff;padding:20px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,.2);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
+.hdr-t{font-size:22px;font-weight:900;letter-spacing:1px}
+.hdr-s{font-size:12px;opacity:.7;margin-top:2px}
+.hdr-r{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.hdr-cnt{background:var(--ac);color:#fff;padding:7px 18px;border-radius:50px;font-size:15px;font-weight:700}
+.sdot{width:8px;height:8px;border-radius:50%;background:#f39c12;flex-shrink:0;transition:background .3s}
+.tbar{background:#fff;padding:16px 28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-bottom:2px solid var(--br);box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.sw{flex:1;min-width:200px;position:relative}
+.sw .si{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none}
+.sinp{width:100%;padding:12px 12px 12px 44px;border:2px solid var(--br);border-radius:var(--r);font-size:17px;font-family:inherit;background:var(--s2);transition:border-color .2s}
+.sinp:focus{outline:none;border-color:var(--p);background:#fff}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:11px 20px;border-radius:var(--r);font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:all .18s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.bp{background:var(--p);color:#fff}.bp:hover{background:var(--pl)}
+.bdd{background:var(--dg);color:#fff}.bdd:hover{background:#e74c3c}
+.bg{background:var(--s2);color:var(--t1);border:2px solid var(--br)}.bg:hover{background:var(--pp);border-color:var(--p);color:var(--p)}
+.bh{background:rgba(255,255,255,.15);color:#fff;border:2px solid rgba(255,255,255,.4)}.bh:hover{background:rgba(255,255,255,.28)}
+.bsm{padding:7px 13px;font-size:14px}
+.main{padding:26px 28px;max-width:1400px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:20px}
+.card{background:#fff;border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden;border:2px solid transparent;transition:all .22s;cursor:pointer}
+.card:hover{border-color:var(--pl);box-shadow:var(--shl);transform:translateY(-2px)}
+.cph{width:100%;height:170px;position:relative;overflow:hidden;background:#e8eef4}
+.cph img{width:100%;height:100%;object-fit:cover;display:block}
+.noph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--t3);font-size:13px;gap:5px}
+.noph-i{font-size:32px;opacity:.3}
+.pcnt{position:absolute;bottom:7px;right:9px;background:rgba(0,0,0,.5);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:18px}
+.ch{background:linear-gradient(135deg,var(--p),#1a6fa3);color:#fff;padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+.cn{font-size:20px;font-weight:900;flex:1}
+.ca{display:flex;gap:6px;flex-shrink:0}
+.ib{background:rgba(255,255,255,.18);border:none;border-radius:7px;padding:6px;color:#fff;cursor:pointer;transition:background .15s;display:flex;align-items:center;font-size:17px}
+.ib:hover{background:rgba(255,255,255,.35)}.ib.d:hover{background:var(--dg)}
+.cbb{padding:14px 18px;display:flex;flex-direction:column;gap:11px}
+.lbl{font-size:12px;color:var(--t3);display:block;margin-bottom:2px}
+.val{font-size:15px;color:var(--t1);font-weight:500}
+.ir{display:flex;gap:8px;align-items:flex-start}
+.ico{color:var(--p);flex-shrink:0;margin-top:2px;font-size:15px}
+.capg{display:flex;gap:7px;flex-wrap:wrap}
+.capb{background:var(--pp);color:var(--p);border-radius:7px;padding:4px 11px;font-size:13px;font-weight:700}
+.tagr{display:flex;flex-wrap:wrap;gap:5px}
+.tag{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:18px;font-size:12px;font-weight:600}
+.ton{background:var(--okp);color:var(--ok)}.tof{background:#f0f0f0;color:#bbb;text-decoration:line-through}
+.fbr{display:flex;gap:9px}
+.fbb{flex:1;border-radius:9px;padding:8px 11px;font-size:13px;line-height:1.5}
+.fbp{background:var(--okp);color:var(--ok)}.fbc{background:var(--dgp);color:var(--dg)}
+.fbt{font-weight:700;margin-bottom:2px;font-size:12px}
+.fee{background:var(--ap);border-left:4px solid var(--ac);border-radius:7px;padding:7px 12px;font-size:13px;font-weight:600;color:#7d3c00}
+.div{height:1px;background:var(--br)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:14px}
+.modal{background:#fff;border-radius:var(--rl);width:100%;max-width:680px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:su .25s ease}
+.mw{max-width:820px}.mn{max-width:450px}
+.mh{background:linear-gradient(135deg,var(--p),#1a6fa3);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;border-radius:var(--rl) var(--rl) 0 0;position:sticky;top:0;z-index:10}
+.mhd{background:linear-gradient(135deg,var(--dg),#e74c3c)}
+.mt{font-size:19px;font-weight:900}
+.mb{padding:24px;display:flex;flex-direction:column;gap:18px}
+.mf{padding:0 24px 24px;display:flex;gap:11px;justify-content:flex-end}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fl{font-size:15px;font-weight:700;color:var(--p)}
+.fi,.fta{padding:11px 14px;border:2px solid var(--br);border-radius:var(--r);font-size:16px;font-family:inherit;transition:border-color .2s}
+.fi:focus,.fta:focus{outline:none;border-color:var(--p)}
+.fta{resize:vertical;min-height:72px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chkg{display:flex;flex-wrap:wrap;gap:8px}
+.chki{display:flex;align-items:center;gap:6px;padding:8px 13px;border:2px solid var(--br);border-radius:var(--r);cursor:pointer;font-size:14px;font-weight:600;transition:all .15s;user-select:none}
+.chki.on{border-color:var(--p);background:var(--pp);color:var(--p)}
+.chki:hover:not(.on){border-color:var(--pl);background:var(--s2)}
+.cbox{width:17px;height:17px;border-radius:4px;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.chki.on .cbox{background:var(--p);border-color:var(--p);color:#fff}
+.stit{font-size:15px;font-weight:800;color:var(--p);border-bottom:2px solid var(--pp);padding-bottom:6px;margin-bottom:3px}
+/* 照片上傳格 */
+.pzone{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px}
+.pslot{width:140px;height:108px;border:2px dashed var(--br);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;transition:all .2s;background:var(--s2);flex-shrink:0}
+.pslot:hover:not(.uploading){border-color:var(--p);background:var(--pp)}
+.pslot img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.ps-lbl{font-size:11px;color:var(--t3);text-align:center;padding:5px;line-height:1.4;pointer-events:none}
+.ps-ico{font-size:22px;margin-bottom:3px;opacity:.4;pointer-events:none}
+.ps-del{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+.ps-del:hover{background:var(--dg)}
+.pslot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.pslot.uploading{border-color:var(--ac);background:#fff8f0;cursor:not-allowed}
+.ps-spin{width:28px;height:28px;border:3px solid #fdebd0;border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite}
+.phint{font-size:12px;color:var(--t3);margin-top:6px;line-height:1.5}
+/* Detail */
+.ds{margin-bottom:16px}
+.dst{font-size:16px;font-weight:800;color:var(--p);display:flex;align-items:center;gap:6px;padding-bottom:6px;border-bottom:2px solid var(--pp);margin-bottom:10px}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.dl{font-size:12px;color:var(--t3);font-weight:600;margin-bottom:2px}
+.dv{font-size:15px;color:var(--t1);font-weight:500;line-height:1.5}
+.gal{display:flex;gap:10px;flex-wrap:wrap}
+.gal-item{width:160px;height:120px;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);cursor:pointer;transition:transform .2s;flex-shrink:0}
+.gal-item:hover{transform:scale(1.04)}
+.gal-item img{width:100%;height:100%;object-fit:cover;display:block}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:999;display:none;align-items:center;justify-content:center}
+#lb img{max-width:92vw;max-height:88vh;border-radius:var(--r);cursor:default}
+#lb-x{position:absolute;top:18px;right:22px;color:#fff;font-size:26px;cursor:pointer;background:rgba(255,255,255,.15);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center}
+#lb-x:hover{background:rgba(255,255,255,.3)}
+.emp{text-align:center;padding:70px 20px;color:var(--t3)}
+.emp-i{font-size:60px;margin-bottom:14px}
+.emp h3{font-size:21px;color:var(--t2);margin-bottom:7px}
+.abox{background:var(--dgp);border:2px solid var(--dg);border-radius:var(--r);padding:13px 16px}
+.atit{font-size:17px;font-weight:800;color:var(--dg);margin-bottom:3px}
+.adsc{font-size:14px;color:var(--t2)}
+.emsg{color:var(--dg);font-weight:700;font-size:14px;margin-top:3px}
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--t1);color:#fff;padding:13px 26px;border-radius:50px;font-size:16px;font-weight:600;z-index:997;opacity:0;box-shadow:0 8px 24px rgba(0,0,0,.3);transition:all .3s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{background:var(--ok)}#toast.err{background:var(--dg)}
+@media(max-width:620px){.hdr,.tbar,.main{padding-left:16px;padding-right:16px}.grid{grid-template-columns:1fr}.r3,.r2{grid-template-columns:1fr}.dg{grid-template-columns:1fr}.fbr{flex-direction:column}.pslot{width:90px;height:70px}}
+</style>
+</head>
+<body>
 
-const SHEET_NAME = '場地資料';
-const PHOTO_FOLDER_ID = '1NxgsnQ5ZFx68sr-WjVsE_3PJtiWFZanf'; // 您的照片資料夾
+<div id="lo" style="position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-size:19px;font-weight:700;color:#1a5276;font-family:'Noto Sans TC',sans-serif">
+  <div style="width:44px;height:44px;border:5px solid #d6eaf8;border-top-color:#1a5276;border-radius:50%;animation:spin 1s linear infinite"></div>
+  載入場地資料中…
+</div>
 
-function doGet(e) { return handleRequest(e); }
-function doPost(e) { return handleRequest(e); }
+<div id="banner" style="display:none;background:linear-gradient(135deg,#f39c12,#e67e22);color:#fff;padding:13px 28px;align-items:center;gap:12px;font-size:15px;font-weight:600;font-family:'Noto Sans TC',sans-serif">
+  ⚠️ 尚未設定 API 網址，請先完成設定。
+  <button onclick="openSetup()" style="background:rgba(255,255,255,.2);color:#fff;border:2px solid rgba(255,255,255,.5);border-radius:9px;padding:7px 14px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif">⚙️ 點此設定</button>
+</div>
 
-function handleRequest(e) {
-  const output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-  let result;
-  try {
-    const action = e.parameter.action || '';
-    const postData = e.postData ? JSON.parse(e.postData.contents) : {};
-    const finalAction = action || postData.action || '';
+<div class="ov" id="sm" style="display:none" onclick="if(event.target.id==='sm')this.style.display='none'">
+  <div class="modal" style="max-width:620px" onclick="event.stopPropagation()">
+    <div class="mh"><span class="mt">⚙️ 設定 Google 試算表連線</span><button class="ib" onclick="document.getElementById('sm').style.display='none'">✕</button></div>
+    <div class="mb">
+      <div style="background:#d6eaf8;border-radius:11px;padding:13px 16px;font-size:14px;color:#1a5276;font-weight:600;line-height:1.7">📋 <strong>只需設定一次！</strong>設定完成後，所有人共用同一份資料。</div>
+      <div style="display:flex;flex-direction:column;gap:13px">
+        <div style="display:flex;gap:10px;align-items:flex-start"><div style="background:#1a5276;color:#fff;width:27px;height:27px;min-width:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px">1</div><div><b>開啟試算表的 Apps Script</b><br><span style="font-size:13px;color:#4a5568">「擴充功能」→「Apps Script」</span></div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><div style="background:#1a5276;color:#fff;width:27px;height:27px;min-width:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px">2</div><div><b>貼上新版 apps-script.js 並按 Ctrl+S</b></div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><div style="background:#1a5276;color:#fff;width:27px;height:27px;min-width:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px">3</div><div><b>重新部署</b><br><span style="font-size:13px;color:#4a5568">「部署」→「管理部署作業」→ 點鉛筆圖示 → 版本選「<b>新增版本</b>」→「部署」</span></div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><div style="background:#1a5276;color:#fff;width:27px;height:27px;min-width:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px">4</div>
+          <div style="flex:1"><b>貼上網址並連線</b>
+            <div style="display:flex;gap:8px;margin-top:7px"><input class="fi" id="ai" placeholder="https://script.google.com/macros/s/xxxxx/exec" style="flex:1;font-size:13px"/><button class="btn bp" onclick="saveApi()">✔ 連線</button></div>
+            <div class="emsg" id="ae" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    if (finalAction === 'uploadPhoto') {
-      result = uploadPhoto(postData.filename, postData.base64, postData.mimeType);
-    } else {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      let sheet = ss.getSheetByName(SHEET_NAME);
-      if (!sheet) {
-        sheet = ss.insertSheet(SHEET_NAME);
-        const headers = [
-          'id','name','location','traffic',
-          'cap_theater','cap_classroom','cap_fishbone',
-          'hw_projector','hw_tvwall','hw_audio','hw_signage','hw_computer','hw_presenter',
-          'net_wifi','net_wired',
-          'contact_name','contact_phone','contact_email',
-          'fee','pros','cons','notes',
-          'photo1','photo2','photo3',
-          'createdAt'
-        ];
-        sheet.appendRow(headers);
-        sheet.getRange(1,1,1,headers.length)
-          .setFontWeight('bold').setBackground('#1a5276').setFontColor('#ffffff');
-        sheet.setFrozenRows(1);
-      }
-      if (finalAction === 'getAll')   result = getAllVenues(sheet);
-      else if (finalAction === 'save')   result = saveVenue(sheet, postData.venue);
-      else if (finalAction === 'delete') result = deleteVenue(sheet, postData.id);
-      else result = { success: false, error: '未知操作' };
+<div id="lb" onclick="this.style.display='none'">
+  <button id="lb-x" onclick="document.getElementById('lb').style.display='none'">✕</button>
+  <img id="lb-img" src="" alt="場地照片" onclick="event.stopPropagation()"/>
+</div>
+
+<div class="hdr">
+  <div><div class="hdr-t">🏛️ 活動場地資料庫</div><div class="hdr-s">Google 試算表雲端版 · 多人即時共享</div></div>
+  <div class="hdr-r">
+    <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,.85)"><div class="sdot" id="sdot"></div><span id="stxt">連線中…</span></div>
+    <button class="btn bh bsm" onclick="loadData()">🔄 同步</button>
+    <button class="btn bh bsm" onclick="openSetup()">⚙️ 設定</button>
+    <span class="hdr-cnt" id="vcnt">共 0 個場地</span>
+  </div>
+</div>
+
+<div class="tbar">
+  <div class="sw"><span class="si">🔍</span><input class="sinp" id="sq" type="text" placeholder="搜尋場地名稱、地址、聯絡人…" oninput="render()"/></div>
+  <button class="btn bp" onclick="openAdd()">➕ 新增場地</button>
+</div>
+
+<div class="main">
+  <div class="grid" id="grid"></div>
+  <div class="emp" id="emp" style="display:none"><div class="emp-i">🔍</div><h3>找不到符合的場地</h3><p>請嘗試其他關鍵字，或新增場地資料</p></div>
+</div>
+
+<!-- 新增/編輯 -->
+<div class="ov" id="fm" style="display:none" onclick="if(event.target.id==='fm')this.style.display='none'">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"><span class="mt" id="ft">新增場地</span><button class="ib" onclick="document.getElementById('fm').style.display='none'">✕</button></div>
+    <div class="mb">
+      <div>
+        <div class="stit">📷 場地照片（最多 3 張）</div>
+        <div class="pzone">
+          <div class="pslot" id="ps0"><div class="ps-ico">🖼️</div><div class="ps-lbl">點擊上傳<br>第 1 張</div><input type="file" accept="image/*" onchange="addPh(0,this)"/></div>
+          <div class="pslot" id="ps1"><div class="ps-ico">🖼️</div><div class="ps-lbl">點擊上傳<br>第 2 張</div><input type="file" accept="image/*" onchange="addPh(1,this)"/></div>
+          <div class="pslot" id="ps2"><div class="ps-ico">🖼️</div><div class="ps-lbl">點擊上傳<br>第 3 張</div><input type="file" accept="image/*" onchange="addPh(2,this)"/></div>
+        </div>
+        <div class="phint">💡 照片會自動上傳到 Google 雲端硬碟「場地照片」資料夾，支援 JPG、PNG，每張限 5MB</div>
+      </div>
+      <div>
+        <div class="stit">📋 基本資訊</div>
+        <div class="fg" style="margin-top:9px"><label class="fl">場地名稱 <span style="color:red">*</span></label><input class="fi" id="fn" placeholder="例：第一會議室"/></div>
+        <div class="fg" style="margin-top:10px"><label class="fl">地址</label><input class="fi" id="flo" placeholder="例：台北市信義區…"/></div>
+        <div class="fg" style="margin-top:10px"><label class="fl">交通資訊</label><textarea class="fta" id="ftr" placeholder="例：捷運市政府站2號出口步行5分鐘…"></textarea></div>
+      </div>
+      <div>
+        <div class="stit">📐 座位容量（人數）</div>
+        <div class="r3" style="margin-top:9px">
+          <div class="fg"><label class="fl" style="font-size:13px">🎭 劇院型</label><input class="fi" id="fth" type="number" min="0" placeholder="人數"/></div>
+          <div class="fg"><label class="fl" style="font-size:13px">📚 教室型</label><input class="fi" id="fcl" type="number" min="0" placeholder="人數"/></div>
+          <div class="fg"><label class="fl" style="font-size:13px">🐟 魚骨型</label><input class="fi" id="ffb" type="number" min="0" placeholder="人數"/></div>
+        </div>
+      </div>
+      <div><div class="stit">🖥️ 硬體設備</div><div class="chkg" style="margin-top:9px" id="hwc"></div></div>
+      <div><div class="stit">📶 網路</div><div class="chkg" style="margin-top:9px" id="ntc"></div></div>
+      <div>
+        <div class="stit">📞 聯絡窗口</div>
+        <div class="r3" style="margin-top:9px">
+          <div class="fg"><label class="fl" style="font-size:13px">姓名</label><input class="fi" id="fcn" placeholder="聯絡人"/></div>
+          <div class="fg"><label class="fl" style="font-size:13px">電話</label><input class="fi" id="fcp" placeholder="02-xxxx-xxxx"/></div>
+          <div class="fg"><label class="fl" style="font-size:13px">Email</label><input class="fi" id="fce" placeholder="example@mail.com"/></div>
+        </div>
+      </div>
+      <div class="fg"><div class="stit">💰 場地費用</div><textarea class="fta" id="ffee" placeholder="例：平日半天 $3,000；全天 $5,000" style="margin-top:9px"></textarea></div>
+      <div>
+        <div class="stit">⭐ 使用回饋</div>
+        <div class="r2" style="margin-top:9px">
+          <div class="fg"><label class="fl" style="font-size:13px">👍 優點</label><textarea class="fta" id="fpro" placeholder="場地優點…"></textarea></div>
+          <div class="fg"><label class="fl" style="font-size:13px">👎 缺點</label><textarea class="fta" id="fcon" placeholder="場地缺點…"></textarea></div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">📝 備註</label><textarea class="fta" id="fnot" placeholder="其他注意事項…"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn bg" onclick="document.getElementById('fm').style.display='none'">取消</button><button class="btn bp" id="sb" onclick="doSave()">✔ 儲存</button></div>
+  </div>
+</div>
+
+<!-- 詳細 -->
+<div class="ov" id="dm" style="display:none" onclick="if(event.target.id==='dm')this.style.display='none'">
+  <div class="modal mw" onclick="event.stopPropagation()">
+    <div class="mh">
+      <span class="mt" id="dtit"></span>
+      <div style="display:flex;gap:9px;align-items:center">
+        <button class="btn bsm" style="color:#fff;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15)" onclick="editFD()">✏️ 編輯</button>
+        <button class="ib" onclick="document.getElementById('dm').style.display='none'">✕</button>
+      </div>
+    </div>
+    <div class="mb" id="dbody"></div>
+  </div>
+</div>
+
+<!-- 刪除 -->
+<div class="ov" id="xm" style="display:none" onclick="if(event.target.id==='xm')this.style.display='none'">
+  <div class="modal mn" onclick="event.stopPropagation()">
+    <div class="mh mhd"><span class="mt">🗑️ 刪除場地</span><button class="ib" onclick="document.getElementById('xm').style.display='none'">✕</button></div>
+    <div class="mb">
+      <div class="abox"><div class="atit" id="xn"></div><div class="adsc">此操作無法復原，請輸入管理員密碼確認。</div></div>
+      <div class="fg"><label class="fl">🔒 管理員密碼</label><input class="fi" id="apw" type="password" placeholder="請輸入管理員密碼" onkeydown="if(event.key==='Enter')doDel()"/><div class="emsg" id="pwe" style="display:none"></div></div>
+    </div>
+    <div class="mf"><button class="btn bg" onclick="document.getElementById('xm').style.display='none'">取消</button><button class="btn bdd" onclick="doDel()">🗑️ 確認刪除</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+var PW='admin1234', AK='vdb_api_v4';
+var HW={projector:'投影機',tvwall:'電視牆',audio:'音響',signage:'電子看板',computer:'電腦',presenter:'簡報筆'};
+var NT={wifi:'WiFi',wired:'固定網路'};
+var venues=[],eid=null,dtid=null,xid=null;
+var apiUrl=localStorage.getItem(AK)||'';
+var hwS={},ntS={},phUrls=['','',''];
+
+function gid(){return 'v'+Date.now()+Math.random().toString(36).slice(2,5);}
+function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''; }
+
+/* ── 照片上傳（先傳到 Drive，取回 URL）─────────────────── */
+function addPh(i, inp) {
+  var file = inp.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { tk('照片過大，請選擇 5MB 以內的檔案', 'err'); inp.value=''; return; }
+  if (!apiUrl) { tk('請先設定 API 網址', 'err'); return; }
+
+  // 顯示上傳中
+  var slot = document.getElementById('ps' + i);
+  slot.classList.add('uploading');
+  slot.innerHTML = '<div class="ps-spin"></div><div class="ps-lbl" style="pointer-events:none">上傳中…</div>';
+
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      var res = await fetch(apiUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'uploadPhoto',
+          filename: file.name,
+          base64: e.target.result,
+          mimeType: file.type,
+          venueName: document.getElementById('fn').value.trim() || '未命名場地',
+          photoIndex: i + 1
+        }),
+        redirect: 'follow'
+      });
+      var j = await res.json();
+      if (!j.success) throw new Error(j.error || '上傳失敗');
+      phUrls[i] = j.url;
+      drawSlot(i);
+      tk('✅ 照片上傳成功！');
+    } catch(err) {
+      phUrls[i] = '';
+      drawSlot(i);
+      tk('❌ 照片上傳失敗：' + err.message, 'err');
     }
-  } catch(err) {
-    result = { success: false, error: err.toString() };
-  }
-  output.setContent(JSON.stringify(result));
-  return output;
-}
-
-// ── 照片上傳到指定資料夾 ─────────────────────────────────
-function uploadPhoto(filename, base64Data, mimeType) {
-  try {
-    const folder = DriveApp.getFolderById(PHOTO_FOLDER_ID);
-
-    const cleanBase64 = base64Data.replace(/^data:[^;]+;base64,/, '');
-    const blob = Utilities.newBlob(
-      Utilities.base64Decode(cleanBase64),
-      mimeType || 'image/jpeg',
-      filename || ('photo_' + Date.now() + '.jpg')
-    );
-
-    const file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE, DriveApp.Permission.VIEW);
-
-    const fileId = file.getId();
-    const viewUrl = 'https://drive.google.com/uc?export=view&id=' + fileId;
-
-    return { success: true, url: viewUrl, fileId: fileId };
-  } catch(err) {
-    return { success: false, error: '上傳失敗：' + err.toString() };
-  }
-}
-
-// ── 場地資料操作 ──────────────────────────────────────────
-function getAllVenues(sheet) {
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { success: true, venues: [] };
-  const headers = data[0];
-  const venues = data.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return rowToVenue(obj);
-  }).filter(v => v.id && v.id !== '');
-  return { success: true, venues };
-}
-
-function saveVenue(sheet, venue) {
-  if (!venue) return { success: false, error: '缺少場地資料' };
-  if (!venue.id) venue.id = 'v' + Date.now();
-  if (!venue.createdAt) venue.createdAt = new Date().toISOString();
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(venue.id)) {
-      sheet.getRange(i+1,1,1,headers.length).setValues([venueToRow(venue, headers)]);
-      return { success: true, action: 'updated' };
-    }
-  }
-  sheet.appendRow(venueToRow(venue, headers));
-  return { success: true, action: 'created', id: venue.id };
-}
-
-function deleteVenue(sheet, id) {
-  if (!id) return { success: false, error: '缺少ID' };
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(id)) {
-      sheet.deleteRow(i + 1);
-      return { success: true };
-    }
-  }
-  return { success: false, error: '找不到該場地' };
-}
-
-function venueToRow(v, headers) {
-  const photos = v.photos || [];
-  const map = {
-    id: v.id||'', name: v.name||'', location: v.location||'', traffic: v.traffic||'',
-    cap_theater:  (v.capacity&&v.capacity.theater)||'',
-    cap_classroom:(v.capacity&&v.capacity.classroom)||'',
-    cap_fishbone: (v.capacity&&v.capacity.fishbone)||'',
-    hw_projector: (v.hardware&&v.hardware.projector)?'TRUE':'FALSE',
-    hw_tvwall:    (v.hardware&&v.hardware.tvwall)?'TRUE':'FALSE',
-    hw_audio:     (v.hardware&&v.hardware.audio)?'TRUE':'FALSE',
-    hw_signage:   (v.hardware&&v.hardware.signage)?'TRUE':'FALSE',
-    hw_computer:  (v.hardware&&v.hardware.computer)?'TRUE':'FALSE',
-    hw_presenter: (v.hardware&&v.hardware.presenter)?'TRUE':'FALSE',
-    net_wifi:     (v.network&&v.network.wifi)?'TRUE':'FALSE',
-    net_wired:    (v.network&&v.network.wired)?'TRUE':'FALSE',
-    contact_name:  (v.contact&&v.contact.name)||'',
-    contact_phone: (v.contact&&v.contact.phone)||'',
-    contact_email: (v.contact&&v.contact.email)||'',
-    fee: v.fee||'', pros: v.pros||'', cons: v.cons||'', notes: v.notes||'',
-    photo1: photos[0]||'', photo2: photos[1]||'', photo3: photos[2]||'',
-    createdAt: v.createdAt||new Date().toISOString(),
   };
-  return headers.map(h => (map[h] !== undefined ? map[h] : ''));
+  reader.readAsDataURL(file);
 }
 
-function rowToVenue(obj) {
-  return {
-    id: String(obj.id||''), name: obj.name||'', location: obj.location||'', traffic: obj.traffic||'',
-    capacity: { theater: obj.cap_theater||'', classroom: obj.cap_classroom||'', fishbone: obj.cap_fishbone||'' },
-    hardware: {
-      projector: obj.hw_projector==='TRUE'||obj.hw_projector===true,
-      tvwall:    obj.hw_tvwall==='TRUE'||obj.hw_tvwall===true,
-      audio:     obj.hw_audio==='TRUE'||obj.hw_audio===true,
-      signage:   obj.hw_signage==='TRUE'||obj.hw_signage===true,
-      computer:  obj.hw_computer==='TRUE'||obj.hw_computer===true,
-      presenter: obj.hw_presenter==='TRUE'||obj.hw_presenter===true,
-    },
-    network: {
-      wifi:  obj.net_wifi==='TRUE'||obj.net_wifi===true,
-      wired: obj.net_wired==='TRUE'||obj.net_wired===true,
-    },
-    contact: { name: obj.contact_name||'', phone: obj.contact_phone||'', email: obj.contact_email||'' },
-    fee: obj.fee||'', pros: obj.pros||'', cons: obj.cons||'', notes: obj.notes||'',
-    photos: [obj.photo1||'', obj.photo2||'', obj.photo3||''],
-    createdAt: obj.createdAt||'',
-  };
+function delPh(i, e) {
+  e.stopPropagation();
+  phUrls[i] = '';
+  drawSlot(i);
 }
+
+function drawSlot(i) {
+  var s = document.getElementById('ps' + i);
+  if (!s) return;
+  s.classList.remove('uploading');
+  if (phUrls[i]) {
+    s.innerHTML = '<img src="' + phUrls[i] + '" alt="照片' + (i+1) + '"/>'
+      + '<button class="ps-del" onclick="delPh(' + i + ',event)">✕</button>';
+  } else {
+    s.innerHTML = '<div class="ps-ico">🖼️</div>'
+      + '<div class="ps-lbl">點擊上傳<br>第' + (i+1) + '張</div>'
+      + '<input type="file" accept="image/*" onchange="addPh(' + i + ',this)"/>';
+  }
+}
+function rstPh() { phUrls=['','','']; for(var i=0;i<3;i++) drawSlot(i); }
+function ldPh(a) { phUrls=a?[a[0]||'',a[1]||'',a[2]||'']:['','','']; for(var i=0;i<3;i++) drawSlot(i); }
+
+/* ── API ─────────────────────────────────────────────── */
+async function api(action, body) {
+  if (!apiUrl) throw new Error('未設定API網址');
+  body = body || {};
+  var res = await fetch(apiUrl, {method:'POST', body:JSON.stringify(Object.assign({action:action}, body)), redirect:'follow'});
+  var j = await res.json();
+  if (!j.success) throw new Error(j.error || '操作失敗');
+  return j;
+}
+function ss(st, tx) {
+  var d=document.getElementById('sdot'), t=document.getElementById('stxt');
+  if(d) d.style.background = st==='ok'?'#2ecc71':st==='loading'?'#f39c12':'#e74c3c';
+  if(t) t.textContent = tx;
+}
+async function loadData() {
+  ss('loading','同步中…');
+  var lo=document.getElementById('lo'); if(lo) lo.style.display='flex';
+  try {
+    var r=await api('getAll'); venues=r.venues||[];
+    ss('ok','已同步 '+new Date().toLocaleTimeString('zh-TW')); render();
+    var b=document.getElementById('banner'); if(b) b.style.display='none';
+  } catch(e) {
+    ss('error','連線失敗');
+    if(!apiUrl){var b=document.getElementById('banner');if(b)b.style.display='flex';openSetup();}
+    else tk('⚠️ 同步失敗：'+e.message,'err');
+  } finally { if(lo) lo.style.display='none'; }
+}
+function openSetup(){var i=document.getElementById('ai');if(i)i.value=apiUrl;var e=document.getElementById('ae');if(e)e.style.display='none';document.getElementById('sm').style.display='flex';}
+async function saveApi(){
+  var url=document.getElementById('ai').value.trim(), e=document.getElementById('ae');
+  if(!url||!url.startsWith('https://script.google.com')){e.textContent='❌ 請輸入正確的 Apps Script 網址';e.style.display='block';return;}
+  e.style.display='none'; apiUrl=url; localStorage.setItem(AK,apiUrl);
+  document.getElementById('sm').style.display='none'; tk('✅ 網址已儲存，正在連線…'); await loadData();
+}
+
+/* ── 渲染 ─────────────────────────────────────────────── */
+function render() {
+  var q=document.getElementById('sq').value.toLowerCase().trim();
+  var f=venues.filter(function(v){if(!q)return true;return[v.name,v.location,v.traffic,v.contact&&v.contact.name,v.fee,v.notes].some(function(s){return s&&String(s).toLowerCase().includes(q);});});
+  document.getElementById('vcnt').textContent='共 '+venues.length+' 個場地';
+  var g=document.getElementById('grid'),em=document.getElementById('emp');
+  if(f.length===0){g.innerHTML='';em.style.display='block';return;} em.style.display='none';
+  g.innerHTML=f.map(function(v){
+    var ps=v.photos||[],th=''; for(var i=0;i<ps.length;i++){if(ps[i]){th=ps[i];break;}}
+    var pc=ps.filter(function(p){return p;}).length;
+    var phH=th?'<div class="cph"><img src="'+th+'" alt="封面" onerror="this.parentNode.innerHTML=\'<div class=noph><div class=noph-i>🏛️</div><span>照片載入失敗</span></div>\'"/>'+(pc>1?'<span class="pcnt">📷 '+pc+'</span>':'')+'</div>':'<div class="cph"><div class="noph"><div class="noph-i">🏛️</div><span>尚無照片</span></div></div>';
+    var hwt=Object.entries(HW).map(function(x){return '<span class="tag '+(v.hardware[x[0]]?'ton':'tof')+'">'+(v.hardware[x[0]]?'✓':'')+' '+x[1]+'</span>';}).join('');
+    var ntt=Object.entries(NT).map(function(x){return '<span class="tag '+(v.network[x[0]]?'ton':'tof')+'">'+(v.network[x[0]]?'✓':'')+' '+x[1]+'</span>';}).join('');
+    var cap=[v.capacity.theater?'<span class="capb">🎭 劇院型 '+v.capacity.theater+' 人</span>':'',v.capacity.classroom?'<span class="capb">📚 教室型 '+v.capacity.classroom+' 人</span>':'',v.capacity.fishbone?'<span class="capb">🐟 魚骨型 '+v.capacity.fishbone+' 人</span>':''].join('');
+    var fb=(v.pros||v.cons)?'<div class="fbr">'+(v.pros?'<div class="fbb fbp"><div class="fbt">👍 優點</div>'+esc(v.pros)+'</div>':'')+(v.cons?'<div class="fbb fbc"><div class="fbt">👎 缺點</div>'+esc(v.cons)+'</div>':'')+'</div>':'';
+    return '<div class="card" onclick="openDet(\''+v.id+'\')">'
+      +phH+'<div class="ch"><div class="cn">'+esc(v.name)+'</div><div class="ca">'
+      +'<button class="ib" onclick="event.stopPropagation();openEdit(\''+v.id+'\')">✏️</button>'
+      +'<button class="ib d" onclick="event.stopPropagation();openDel(\''+v.id+'\')">🗑️</button></div></div>'
+      +'<div class="cbb">'
+      +(v.location?'<div class="ir"><span class="ico">📍</span><div><span class="lbl">地址</span><span class="val">'+esc(v.location)+'</span></div></div>':'')
+      +(cap?'<div><span class="lbl">📐 座位容量</span><div class="capg" style="margin-top:4px">'+cap+'</div></div>':'')
+      +'<div class="div"></div>'
+      +'<div><span class="lbl">🖥️ 硬體設備</span><div class="tagr" style="margin-top:4px">'+hwt+'</div></div>'
+      +'<div><span class="lbl">📶 網路</span><div class="tagr" style="margin-top:4px">'+ntt+'</div></div>'
+      +'<div class="div"></div>'
+      +(v.fee?'<div class="fee">💰 費用：'+esc(v.fee)+'</div>':'')
+      +(v.contact&&v.contact.name?'<div class="ir"><span class="ico">📞</span><div><span class="lbl">聯絡窗口</span><span class="val">'+esc(v.contact.name)+(v.contact.phone?' · '+esc(v.contact.phone):'')+'</span></div></div>':'')
+      +fb+(v.notes?'<div style="font-size:12px;color:var(--t3);font-style:italic">📝 '+esc(v.notes)+'</div>':'')
+      +'</div></div>';
+  }).join('');
+}
+
+/* ── Checkboxes ──────────────────────────────────────── */
+function buildCB(){
+  document.getElementById('hwc').innerHTML=Object.entries(HW).map(function(x){return '<div class="chki" id="hw-'+x[0]+'" onclick="togCB(\'hw\',\''+x[0]+'\')"><span class="cbox" id="cb-hw-'+x[0]+'"></span>'+x[1]+'</div>';}).join('');
+  document.getElementById('ntc').innerHTML=Object.entries(NT).map(function(x){return '<div class="chki" id="nt-'+x[0]+'" onclick="togCB(\'nt\',\''+x[0]+'\')"><span class="cbox" id="cb-nt-'+x[0]+'"></span>'+x[1]+'</div>';}).join('');
+}
+function togCB(g,k){var s=g==='hw'?hwS:ntS;s[k]=!s[k];var el=document.getElementById(g+'-'+k),cb=document.getElementById('cb-'+g+'-'+k);if(el)el.classList.toggle('on',!!s[k]);if(cb)cb.textContent=s[k]?'✓':'';}
+function setCB(hw,nt){Object.keys(HW).forEach(function(k){hwS[k]=!!(hw&&hw[k]);var el=document.getElementById('hw-'+k),cb=document.getElementById('cb-hw-'+k);if(el)el.classList.toggle('on',!!hwS[k]);if(cb)cb.textContent=hwS[k]?'✓':'';});Object.keys(NT).forEach(function(k){ntS[k]=!!(nt&&nt[k]);var el=document.getElementById('nt-'+k),cb=document.getElementById('cb-nt-'+k);if(el)el.classList.toggle('on',!!ntS[k]);if(cb)cb.textContent=ntS[k]?'✓':'';});}
+function gForm(){return{name:document.getElementById('fn').value.trim(),location:document.getElementById('flo').value.trim(),traffic:document.getElementById('ftr').value.trim(),capacity:{theater:document.getElementById('fth').value,classroom:document.getElementById('fcl').value,fishbone:document.getElementById('ffb').value},hardware:Object.assign({},hwS),network:Object.assign({},ntS),contact:{name:document.getElementById('fcn').value.trim(),phone:document.getElementById('fcp').value.trim(),email:document.getElementById('fce').value.trim()},fee:document.getElementById('ffee').value.trim(),pros:document.getElementById('fpro').value.trim(),cons:document.getElementById('fcon').value.trim(),notes:document.getElementById('fnot').value.trim(),photos:phUrls.slice()};}
+function clrForm(){['fn','flo','ftr','fth','fcl','ffb','fcn','fcp','fce','ffee','fpro','fcon','fnot'].forEach(function(id){document.getElementById(id).value='';});setCB({},{});rstPh();}
+function filForm(v){document.getElementById('fn').value=v.name||'';document.getElementById('flo').value=v.location||'';document.getElementById('ftr').value=v.traffic||'';document.getElementById('fth').value=(v.capacity&&v.capacity.theater)||'';document.getElementById('fcl').value=(v.capacity&&v.capacity.classroom)||'';document.getElementById('ffb').value=(v.capacity&&v.capacity.fishbone)||'';document.getElementById('fcn').value=(v.contact&&v.contact.name)||'';document.getElementById('fcp').value=(v.contact&&v.contact.phone)||'';document.getElementById('fce').value=(v.contact&&v.contact.email)||'';document.getElementById('ffee').value=v.fee||'';document.getElementById('fpro').value=v.pros||'';document.getElementById('fcon').value=v.cons||'';document.getElementById('fnot').value=v.notes||'';setCB(v.hardware||{},v.network||{});ldPh(v.photos||[]);}
+
+function openAdd(){eid=null;clrForm();document.getElementById('ft').textContent='➕ 新增場地';document.getElementById('fm').style.display='flex';}
+function openEdit(id){var v=venues.find(function(x){return x.id===id;});if(!v)return;eid=id;filForm(v);document.getElementById('ft').textContent='✏️ 編輯場地';document.getElementById('fm').style.display='flex';}
+function editFD(){document.getElementById('dm').style.display='none';openEdit(dtid);}
+function openDel(id){xid=id;var v=venues.find(function(x){return x.id===id;});document.getElementById('xn').textContent='確認刪除：'+(v?v.name:'');document.getElementById('apw').value='';document.getElementById('pwe').style.display='none';document.getElementById('xm').style.display='flex';setTimeout(function(){document.getElementById('apw').focus();},100);}
+function showLb(src){document.getElementById('lb-img').src=src;document.getElementById('lb').style.display='flex';}
+
+function openDet(id){
+  var v=venues.find(function(x){return x.id===id;});if(!v)return;dtid=id;
+  document.getElementById('dtit').textContent='🏛️ '+v.name;
+  var hwt=Object.entries(HW).map(function(x){return '<span class="tag '+(v.hardware[x[0]]?'ton':'tof')+'">'+(v.hardware[x[0]]?'✓':'')+' '+x[1]+'</span>';}).join('');
+  var ntt=Object.entries(NT).map(function(x){return '<span class="tag '+(v.network[x[0]]?'ton':'tof')+'">'+(v.network[x[0]]?'✓':'')+' '+x[1]+'</span>';}).join('');
+  var cap=[v.capacity.theater?'<span class="capb" style="font-size:15px;padding:6px 14px">🎭 劇院型 '+v.capacity.theater+' 人</span>':'',v.capacity.classroom?'<span class="capb" style="font-size:15px;padding:6px 14px">📚 教室型 '+v.capacity.classroom+' 人</span>':'',v.capacity.fishbone?'<span class="capb" style="font-size:15px;padding:6px 14px">🐟 魚骨型 '+v.capacity.fishbone+' 人</span>':''].join('');
+  var ps=v.photos||[];
+  var gal=ps.filter(function(p){return p;}).length>0?'<div class="gal">'+ps.map(function(p,i){return p?'<div class="gal-item" onclick="showLb(\''+p+'\')"><img src="'+p+'" alt="照片'+(i+1)+'"/></div>':'';}).join('')+'</div>':'<span style="color:var(--t3);font-size:14px">尚未上傳照片</span>';
+  document.getElementById('dbody').innerHTML=
+    '<div class="ds"><div class="dst">📷 場地照片</div>'+gal+'</div>'+
+    '<div class="ds"><div class="dst">📍 地點與交通</div><div class="dg"><div><div class="dl">地址</div><div class="dv">'+(esc(v.location)||'—')+'</div></div><div><div class="dl">交通資訊</div><div class="dv">'+(esc(v.traffic)||'—')+'</div></div></div></div>'+
+    '<div class="ds"><div class="dst">📐 座位容量</div><div class="capg">'+(cap||'<span style="color:var(--t3)">未填寫</span>')+'</div></div>'+
+    '<div class="ds"><div class="dst">🖥️ 硬體設備</div><div class="tagr">'+hwt+'</div></div>'+
+    '<div class="ds"><div class="dst">📶 網路</div><div class="tagr">'+ntt+'</div></div>'+
+    '<div class="ds"><div class="dst">📞 聯絡窗口</div><div class="dg"><div><div class="dl">姓名</div><div class="dv">'+(esc(v.contact&&v.contact.name)||'—')+'</div></div><div><div class="dl">電話</div><div class="dv">'+(esc(v.contact&&v.contact.phone)||'—')+'</div></div><div style="grid-column:1/-1"><div class="dl">Email</div><div class="dv">'+(esc(v.contact&&v.contact.email)||'—')+'</div></div></div></div>'+
+    '<div class="ds"><div class="dst">💰 場地費用</div><div class="fee" style="font-size:15px">'+(esc(v.fee)||'未填寫')+'</div></div>'+
+    '<div class="ds"><div class="dst">⭐ 使用回饋</div>'+((v.pros||v.cons)?'<div class="fbr">'+(v.pros?'<div class="fbb fbp" style="font-size:14px"><div class="fbt">👍 優點</div>'+esc(v.pros)+'</div>':'')+(v.cons?'<div class="fbb fbc" style="font-size:14px"><div class="fbt">👎 缺點</div>'+esc(v.cons)+'</div>':'')+'</div>':'<span style="color:var(--t3)">尚無回饋</span>')+'</div>'+
+    (v.notes?'<div class="ds"><div class="dst">📝 備註</div><div style="font-size:15px;color:var(--t2);line-height:1.7">'+esc(v.notes)+'</div></div>':'');
+  document.getElementById('dm').style.display='flex';
+}
+
+async function doSave(){
+  var d=gForm(); if(!d.name){tk('請填寫場地名稱','err');return;}
+  var btn=document.getElementById('sb'); if(btn){btn.disabled=true;btn.textContent='儲存中…';}
+  try{
+    var base=eid?venues.find(function(v){return v.id===eid;})||{}:{};
+    var venue=Object.assign({},base,d,{id:eid||gid(),createdAt:(base&&base.createdAt)||new Date().toISOString()});
+    await api('save',{venue:venue});
+    tk(eid?'✅ 場地資料已更新！':'✅ 場地新增成功！');
+    document.getElementById('fm').style.display='none'; await loadData();
+  }catch(e){tk('❌ 儲存失敗：'+e.message,'err');}
+  finally{if(btn){btn.disabled=false;btn.textContent='✔ 儲存';}}
+}
+async function doDel(){
+  var pw=document.getElementById('apw').value, e=document.getElementById('pwe');
+  if(pw!==PW){e.textContent='❌ 管理員密碼錯誤，請重新輸入';e.style.display='block';return;}
+  try{await api('delete',{id:xid});tk('🗑️ 場地已刪除','err');document.getElementById('xm').style.display='none';await loadData();}
+  catch(e){tk('❌ 刪除失敗：'+e.message,'err');}
+}
+function tk(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='show '+(type||'ok');clearTimeout(t._t);t._t=setTimeout(function(){t.className='';},2800);}
+
+buildCB(); loadData(); setInterval(loadData,60000);
+</script>
+</body>
+</html>
